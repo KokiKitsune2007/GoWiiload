@@ -45,7 +45,7 @@ func wiiload_grab_ip() string { // Looks for the WII environment variable and re
 	ip, exist := os.LookupEnv("WII")
 
 	if !exist || ip == "" {
-		log.Fatal("WII environment variable not found!")
+		return fmt.Errorf("WII environment variable not found!")
 	}
 
 	return ip
@@ -60,7 +60,7 @@ func wiiload_grab_file(path string) ([]byte, error) { // Has a map of all the va
 
 	ext := strings.ToLower(filepath.Ext(path))
 	if !valid[ext] {
-		log.Fatal("Unknown Extension!  Wiiload only takes dol, elf, rpx, or wuhb files!")
+		return fmt.Errorf("Unknown Extension!  Wiiload only takes dol, elf, rpx, or wuhb files!")
 	}
 
 	file, err := os.ReadFile(path)
@@ -75,7 +75,7 @@ func wiiload_connect(ip string, path string) error {
 	// For all of you purists out there, take a walk!  Be grateful this app even works!
 	data, err1 := wiiload_grab_file(path)
 	if err1 != nil {
-		log.Fatal(err1)
+		return fmt.Errorf(err1)
 	}
 
 	if ip == "" {
@@ -93,7 +93,7 @@ func wiiload_connect(ip string, path string) error {
 	addr := fmt.Sprintf("%s:%d", ip, port)
 	conn, err2 := net.Dial("tcp", addr)
 	if err2 != nil {
-		log.Fatal(err2)
+		return fmt.Errorf(err2)
 	}
 	defer conn.Close()
 	// Construct the header
@@ -106,7 +106,7 @@ func wiiload_connect(ip string, path string) error {
 	// Serialize the header
 	buffer := new(bytes.Buffer)
 	if err := binary.Write(buffer, binary.BigEndian, header); err != nil {
-		log.Fatalf("Failed to serialize: %v", err)
+		return fmt.Errorf("Failed to serialize: %v", err)
 	}
 	wiiload_send(conn, data, buffer.Bytes())
 
