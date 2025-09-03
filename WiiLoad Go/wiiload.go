@@ -72,7 +72,7 @@ func wiiload_grab_file(path string) ([]byte, error) { // Has a map of all the va
 
 }
 func wiiload_connect(ip string, path string) error {
-	// For all of you purists out there, take a walk!  Be grateful this app even works!
+	
 	data, err1 := wiiload_grab_file(path)
 	if err1 != nil {
 		return fmt.Errorf(err1)
