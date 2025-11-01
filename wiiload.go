@@ -72,10 +72,10 @@ func wiiload_grab_file(path string) ([]byte, error) { // Has a map of all the va
 
 }
 func wiiload_connect(ip string, path string) error {
-	
-	data, err1 := wiiload_grab_file(path)
-	if err1 != nil {
-		return fmt.Errorf(err1)
+
+	data, err := wiiload_grab_file(path)
+	if err != nil {
+		return fmt.Errorf("Unable to grab file: %w", err)
 	}
 
 	if ip == "" {
@@ -91,9 +91,9 @@ func wiiload_connect(ip string, path string) error {
 	const port = 4299
 
 	addr := fmt.Sprintf("%s:%d", ip, port)
-	conn, err2 := net.Dial("tcp", addr)
-	if err2 != nil {
-		return fmt.Errorf(err2)
+	conn, err := net.Dial("tcp", addr)
+	if err != nil {
+		return fmt.Errorf(err)
 	}
 	defer conn.Close()
 	// Construct the header
