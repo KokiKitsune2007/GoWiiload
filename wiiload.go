@@ -21,7 +21,6 @@ import (
 	"bytes"
 	"encoding/binary"
 	"fmt"
-	"log"
 	"net"
 	"os"
 	"path/filepath"
@@ -40,15 +39,15 @@ type Wiiload struct {
 const HBC_VERSION_MAJOR = 0
 const HBC_VERSION_MINOR = 5
 
-func wiiload_grab_ip() string { // Looks for the WII environment variable and returns the ip as a string
+func wiiload_grab_ip() (string, error) { // Looks for the WII environment variable and returns the ip as a string
 
 	ip, exist := os.LookupEnv("WII")
 
 	if !exist || ip == "" {
-		return fmt.Errorf("WII environment variable not found!")
+		return "", fmt.Errorf("WII environment variable not found!")
 	}
 
-	return ip
+	return ip, nil
 }
 func wiiload_grab_file(path string) ([]byte, error) { // Has a map of all the valid extensions.  Zip file sending will come soon
 	valid := map[string]bool{
@@ -60,18 +59,17 @@ func wiiload_grab_file(path string) ([]byte, error) { // Has a map of all the va
 
 	ext := strings.ToLower(filepath.Ext(path))
 	if !valid[ext] {
-		return fmt.Errorf("Unknown Extension!  Wiiload only takes dol, elf, rpx, or wuhb files!")
+		return nil, fmt.Errorf("Unknown Extension!  Wiiload only takes dol, elf, rpx, or wuhb files!")
 	}
 
 	file, err := os.ReadFile(path)
 	if err != nil {
-		log.Fatalf("Error reading: %v\n", err)
-		return nil, err
+		return nil, fmt.Errorf("Error reading: %w", err)
 	}
 	return file, nil
 
 }
-func wiiload_connect(ip string, path string) error {
+func wiiload_connect(ip, path string) error {
 
 	data, err := wiiload_grab_file(path)
 	if err != nil {
@@ -79,7 +77,10 @@ func wiiload_connect(ip string, path string) error {
 	}
 
 	if ip == "" {
-		ip = wiiload_grab_ip()
+		ip, err = wiiload_grab_ip()
+		if err != nil {
+			return fmt.Errorf("unable to grab IP: %w", err)
+			}
 	}
 
 	parsed := net.ParseIP(ip)
@@ -93,7 +94,7 @@ func wiiload_connect(ip string, path string) error {
 	addr := fmt.Sprintf("%s:%d", ip, port)
 	conn, err := net.Dial("tcp", addr)
 	if err != nil {
-		return fmt.Errorf(err)
+		return fmt.Errorf("failed to dial: %w", err)
 	}
 	defer conn.Close()
 	// Construct the header
@@ -106,7 +107,7 @@ func wiiload_connect(ip string, path string) error {
 	// Serialize the header
 	buffer := new(bytes.Buffer)
 	if err := binary.Write(buffer, binary.BigEndian, header); err != nil {
-		return fmt.Errorf("Failed to serialize: %v", err)
+		return fmt.Errorf("Failed to serialize: %w", err)
 	}
 	wiiload_send(conn, data, buffer.Bytes())
 
